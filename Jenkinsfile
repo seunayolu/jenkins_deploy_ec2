@@ -14,9 +14,8 @@ pipeline {
         stage (deploy_to_ec2) {
             steps {
                 script {
-                    def cp_html = 'sudo cp -r ./* /var/www/html/'
+                    def cp_html = 'sudo cp -r /home/ubuntu/* /var/www/html/'
                     sshagent(['ec2-key']) {
-                        sh "scp -o StrictHostKeyChecking=no -r 2137_barista_cafe/* ubuntu@54.194.76.102:/home/ubuntu"
                         sh "ssh -o StrictHostKeyChecking=no ubuntu@54.194.76.102 ${cp_html}"
                     }
                 }
