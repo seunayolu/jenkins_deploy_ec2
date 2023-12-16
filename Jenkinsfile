@@ -6,12 +6,12 @@ pipeline {
             steps {
                 script {
                     echo "Pull source code from Git"
-                    git branch: 'jenkins', credentialsId: 'Github_KEY', url: 'https://github.com/seunayolu/jenkins_deploy_ec2.git'
+                    git branch: 'jenkins', url: 'https://github.com/seunayolu/jenkins_deploy_ec2.git'
                 }
             }
         }
 
-        stage (deploy_to_ec2) {
+        /*stage (deploy_to_ec2) {
             steps {
                 script {
                     def apache_install = 'sudo apt update && apt install apache2 -y'
@@ -21,6 +21,6 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
     }
 }
