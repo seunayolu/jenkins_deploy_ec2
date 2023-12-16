@@ -11,16 +11,16 @@ pipeline {
             }
         }
 
-        /*stage (deploy_to_ec2) {
+        stage (deploy_to_ec2) {
             steps {
                 script {
                     def apache_install = 'sudo apt update && apt install apache2 -y'
-                    sshagent(['ec-key']) {
+                    sshagent(['ec2-key']) {
                         sh "ssh -o StrictHostKeyChecking=no ubuntu@54.194.76.102 ${apache_install}"
                         sh "scp -o StrictHostKeyChecking=no -r 2137_barista_cafe/* ubuntu@54.194.76.102:/home/ubuntu"
                     }
                 }
             }
-        }*/
+        }
     }
 }
