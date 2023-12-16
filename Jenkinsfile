@@ -14,9 +14,10 @@ pipeline {
         stage (deploy_to_ec2) {
             steps {
                 script {
-                    def apache_install = 'sudo apt update && sudo apt install apache2'
+                    def cp_hmtl = 'sudo cp -r ./* /var/www/html/'
                     sshagent(['ec2-key']) {
                         sh "scp -o StrictHostKeyChecking=no -r 2137_barista_cafe/* ubuntu@54.194.76.102:/home/ubuntu"
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@54.194.76.102 ${cp_html}"
                     }
                 }
             }
