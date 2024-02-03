@@ -16,7 +16,7 @@ pipeline {
             }
         }
 
-        stage (deploy_to_ec2) {
+        stage (deploy_to_ec2_) {
             steps {
                 script {
                     echo "push content to ec2-ubuntu-server"
