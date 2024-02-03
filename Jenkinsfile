@@ -19,7 +19,7 @@ pipeline {
         stage (deploy_to_ec2) {
             steps {
                 script {
-                    echo "push content to ec2"
+                    echo "push content to ec2-ubuntu-server"
                     def cp_html = 'sudo cp -r /home/ubuntu/* /var/www/html/'
                     sshagent(['ec2-key']) {
                         sh "ssh -o StrictHostKeyChecking=no ubuntu@18.201.29.201 ${cp_html}"
