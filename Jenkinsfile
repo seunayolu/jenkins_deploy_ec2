@@ -35,7 +35,7 @@ pipeline {
                     def git_clone = 'sudo git clone https://github.com/seunayolu/jenkins_deploy_ec2'
                     sshagent(['EC2-KEY']) {
                         sh "rm -rf /var/www/html/*"
-                        sh "cp -r ./jenkins_deploy_ec2/2137_barista_cafe/* /var/www/html/"
+                        sh "cp -r  /home/ubuntu/jenkins_deploy_ec2/2137_barista_cafe/* /var/www/html/"
                     }
                 }
             }
