@@ -32,7 +32,7 @@ pipeline {
             steps {
                 script {
                     echo "Copying files to EC2 instance"
-                    def git_clone = 'git clone https://github.com/seunayolu/jenkins_deploy_ec2 /opt/'
+                    def git_clone = 'git clone https://github.com/seunayolu/jenkins_deploy_ec2 /home/ubuntu/'
                     sshagent(['EC2-KEY']) {
                         sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.33.221 ${git_clone}"
                     }
