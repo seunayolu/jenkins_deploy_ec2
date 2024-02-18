@@ -32,9 +32,9 @@ pipeline {
             steps {
                 script {
                     echo "Copying files to EC2 instance"
-                    withCredentials([file(credentialsId: 'EC2-KEY', variable: 'EC2_PRIVATE_KEY')]) {
-                        def scp_command = "scp -o StrictHostKeyChecking=no -i ${EC2_PRIVATE_KEY} ./2137_barista_cafe/* ubuntu@172.31.33.221:/var/www/html/"
-                        sh "${scp_command}"
+                    def git_clone = 'git clone https://github.com/seunayolu/jenkins_deploy_ec2 /opt/'
+                    sshagent(['EC2-KEY']) {
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.33.221 ${git_clone}"
                     }
                 }
             }
