@@ -20,7 +20,7 @@ pipeline {
             steps {
                 script {
                     // Install Apache 2 On Ubuntu Server
-                    def apache_install = echo "jenkins" | sshpass -p "" ssh -o StrictHostKeyChecking=no jenkins@172.31.33.221 'sudo -S apt update && sudo -S apt install -y apache2'
+                    def apache_install = echo "jenkins" | sshpass -p  "ssh -o StrictHostKeyChecking=no jenkins@172.31.33.221 'sudo -S apt update && sudo -S apt install -y apache2'"
                     sshagent(['EC2-KEY']) {
                         sh "${apache_install}"
                     }
