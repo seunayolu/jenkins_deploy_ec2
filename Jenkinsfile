@@ -20,9 +20,9 @@ pipeline {
             steps {
                 script {
                     // Install Apache 2 On Ubuntu Server
-                    def apache_install = 'sudo apt update && sudo apt install apache2 -y'
+                    def apache_install = 'sudo apt update && sudo apt install -y apache2'
                     sshagent(['EC2-KEY']) {
-                        sh "ssh -o StrictHostKeyChecking=no ubuntu@3.253.113.45 ${apache_install}"
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@54.216.133.238 ${apache_install}"
                     }
                 }
             }
