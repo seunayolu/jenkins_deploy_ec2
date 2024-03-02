@@ -4,8 +4,8 @@
 echo "########################################"
 echo "Installing packages."
 echo "########################################"
-#sudo apt update -y > /dev/null
-#sudo apt install wget unzip apache2 -y > /dev/null
+sudo apt update -y > /dev/null
+sudo apt install wget unzip apache2 -y > /dev/null
 echo
 
 # Creating Temp Directory
