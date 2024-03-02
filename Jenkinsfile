@@ -1,8 +1,3 @@
-/*def COLOR_MAP = [
-    'SUCCESS': 'good', 
-    'FAILURE': 'danger',
-]*/
-
 pipeline {
     agent any
 
@@ -16,10 +11,14 @@ pipeline {
             }
         }
         
-        stage ('Copy Files to EC2') {
+        stage ('deploy to EC2') {
             steps {
                 script {
-                    
+                    echo "deploying to shell-script to ec2"
+                    def shellCmd = "bash ./websetup.sh"
+                    ssh-agent (['ec2-server-key']) {
+                        sh "scp websetup.sh ubuntu@34.244.52.132:/home/ubuntu"
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@34.244.52.132 ${shellCmd}"
                     }
                 }
             }
