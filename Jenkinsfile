@@ -16,9 +16,9 @@ pipeline {
                 script {
                     echo "deploying to shell-script to ec2"
                     def shellCmd = "bash ./websetup.sh"
-                    sshagent (['ec2-server-key']) {
-                        sh "scp -o StrictHostKeyChecking=no websetup.sh ubuntu@34.244.52.132:/home/ubuntu"
-                        sh "ssh -o StrictHostKeyChecking=no ubuntu@34.244.52.132 ${shellCmd}"
+                    sshagent (['EC2-KEY']) {
+                        sh "scp -o StrictHostKeyChecking=no websetup.sh ubuntu@3.252.83.53:/home/ubuntu"
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@3.252.83.53 ${shellCmd}"
                     }
                 }
             }
