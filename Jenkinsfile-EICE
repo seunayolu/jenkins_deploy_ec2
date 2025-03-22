@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+
+    environment {
+        INSTANCE_ID = 'i-1234567890abcdef0'  // Replace with your EC2 instance ID
+        AWS_REGION = 'us-east-1'  // Replace with your region
+        ENDPOINT_ID = 'eic-1234567890abcdef0'  // Replace with your EC2 Instance Connect Endpoint ID
+        SSH_USER = 'ubuntu'  // Matches your original user
+    }
+
+    stages {
+        stage('fetch code') {
+            steps {
+                script {
+                    echo "Pull source code from Git"
+                    git branch: 'jenkins', url: 'https://github.com/seunayolu/jenkins_deploy_ec2.git'
+                }
+            }
+        }
+
+        stage('deploy to EC2 via Instance Connect') {
+            steps {
+                withAWS(role: 'JenkinsRole', region: "${AWS_REGION}") {  // Use the IAM role attached to Jenkins
+                    script {
+                        echo "Deploying websetup.sh to EC2 via Instance Connect Endpoint"
+                        // Step 1: Copy the script using scp with Instance Connect
+                        sh """
+                            aws ec2-instance-connect ssh \
+                                --instance-id ${INSTANCE_ID} \
+                                --connection-type eice \
+                                --ssh-endpoint-id ${ENDPOINT_ID} \
+                                --local-forwarding scp \
+                                -- scp websetup.sh ${SSH_USER}@${INSTANCE_ID}:/home/ubuntu/websetup.sh
+                        """
+                        
+                        // Step 2: Execute the script
+                        sh """
+                            aws ec2-instance-connect ssh \
+                                --instance-id ${INSTANCE_ID} \
+                                --connection-type eice \
+                                --ssh-endpoint-id ${ENDPOINT_ID} \
+                                --remote-command 'chmod +x /home/ubuntu/websetup.sh && bash /home/ubuntu/websetup.sh'
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
