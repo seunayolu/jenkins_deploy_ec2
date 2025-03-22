@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+
+    environment {
+        INSTANCE_ID = 'i-1234567890abcdef0'  // Replace with your EC2 instance ID
+        AWS_REGION = 'us-east-1'  // Replace with your region (e.g., eu-west-1 for 54.75.33.241)
+        S3_BUCKET = 'my-jenkins-bucket'  // Replace with your S3 bucket name
+    }
+
+    stages {
+        stage('fetch code') {
+            steps {
+                script {
+                    echo "Pull source code from Git"
+                    git branch: 'jenkins', url: 'https://github.com/seunayolu/jenkins_deploy_ec2.git'
+                }
+            }
+        }
+
+        stage('deploy to EC2 via SSM') {
+            steps {
+                withAWS(role: 'JenkinsRole', region: "${AWS_REGION}") {  // Use the IAM role attached to Jenkins
+                    script {
+                        echo "Deploying websetup.sh to EC2 via SSM"
+                        // Step 1: Upload websetup.sh to S3
+                        sh "aws s3 cp websetup.sh s3://${S3_BUCKET}/websetup.sh"
+                        
+                        // Step 2: Download and execute on EC2 via SSM
+                        sh """
+                            aws ssm send-command \
+                                --instance-ids ${INSTANCE_ID} \
+                                --document-name 'AWS-RunShellScript' \
+                                --parameters 'commands=["aws s3 cp s3://${S3_BUCKET}/websetup.sh /home/ubuntu/websetup.sh","chmod +x /home/ubuntu/websetup.sh","bash /home/ubuntu/websetup.sh"]' \
+                                --output text
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
