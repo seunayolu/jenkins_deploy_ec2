@@ -1,10 +1,12 @@
 pipeline {
-    agent any
+    agent {
+        label 'node-ec-1'  // Specify the node to run the pipeline
+    }
 
     environment {
-        INSTANCE_ID = 'i-1234567890abcdef0'  // Replace with your EC2 instance ID
-        AWS_REGION = 'us-east-1'  // Replace with your region (e.g., eu-west-1 for 54.75.33.241)
-        S3_BUCKET = 'my-jenkins-bucket'  // Replace with your S3 bucket name
+        INSTANCE_ID = 'i-03cc6d0c4b19f13ba'  // Your EC2 instance ID
+        AWS_REGION = 'us-east-1'  // Your region
+        S3_BUCKET = 'jenkins-ec2-ssm-buk'  // Your S3 bucket name
     }
 
     stages {
@@ -19,8 +21,14 @@ pipeline {
 
         stage('deploy to EC2 via SSM') {
             steps {
-                withAWS(role: 'JenkinsRole', region: "${AWS_REGION}") {  // Use the IAM role attached to Jenkins
+                // Check identity before withAWS block (should use JenkinsRole)
+                sh "aws sts get-caller-identity --output text"
+
+                withAWS(role: 'DeploySSM', region: "${AWS_REGION}") {
                     script {
+                        // Check identity inside withAWS block (should use DeployRole)
+                        sh "aws sts get-caller-identity --output text"
+
                         echo "Deploying websetup.sh to EC2 via SSM"
                         // Step 1: Upload websetup.sh to S3
                         sh "aws s3 cp websetup.sh s3://${S3_BUCKET}/websetup.sh"
@@ -31,6 +39,7 @@ pipeline {
                                 --instance-ids ${INSTANCE_ID} \
                                 --document-name 'AWS-RunShellScript' \
                                 --parameters 'commands=["aws s3 cp s3://${S3_BUCKET}/websetup.sh /home/ubuntu/websetup.sh","chmod +x /home/ubuntu/websetup.sh","bash /home/ubuntu/websetup.sh"]' \
+                                --cloud-watch-output-config 'CloudWatchOutputEnabled=true,CloudWatchLogGroupName=SSMCommandLogs' \
                                 --output text
                         """
                     }
@@ -38,4 +47,4 @@ pipeline {
             }
         }
     }
-}
+}    
