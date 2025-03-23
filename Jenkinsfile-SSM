@@ -16,7 +16,7 @@ pipeline {
                 // Check identity before withAWS block (should use JenkinsRole)
                 sh "aws sts get-caller-identity --output text"
 
-                withAWS(role: 'DeploySSM', region: "${AWS_REGION}") {
+                withAWS(region: "${AWS_REGION}") {
                     script {
                         // Check identity inside withAWS block (should use DeployRole)
                         sh "aws sts get-caller-identity --output text"
