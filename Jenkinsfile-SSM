@@ -10,33 +10,72 @@ pipeline {
     }
 
     stages {
-
         stage('deploy to EC2 via SSM') {
             steps {
-                // Check identity before withAWS block (should use JenkinsRole)
-                sh "aws sts get-caller-identity --output text"
-
                 withAWS(region: "${AWS_REGION}") {
                     script {
-                        // Check identity inside withAWS block (should use DeployRole)
+                        // Check identity before withAWS block (should use jenkinscicd-role)
                         sh "aws sts get-caller-identity --output text"
 
                         echo "Deploying websetup.sh to EC2 via SSM"
-                        // Step 1: Upload websetup.sh to S3
-                        sh "aws s3 cp websetup.sh s3://${S3_BUCKET}/websetup.sh"
-                        
-                        // Step 2: Download and execute on EC2 via SSM
+                        // Step 1: Upload websetup.sh to S3 (fail if the command fails)
                         sh """
+                            set -e
+                            aws s3 cp websetup.sh s3://${S3_BUCKET}/websetup.sh
+                        """
+
+                        // Step 2: Send the SSM command and capture the command ID
+                        def commandOutput = sh(script: """
+                            set -e
                             aws ssm send-command \
                                 --instance-ids ${INSTANCE_ID} \
                                 --document-name 'AWS-RunShellScript' \
                                 --parameters 'commands=["aws s3 cp s3://${S3_BUCKET}/websetup.sh /home/ubuntu/websetup.sh","chmod +x /home/ubuntu/websetup.sh","bash /home/ubuntu/websetup.sh"]' \
                                 --cloud-watch-output-config 'CloudWatchOutputEnabled=true,CloudWatchLogGroupName=SSMCommandLogs' \
-                                --output text
+                                --output json
+                        """, returnStdout: true).trim()
+
+                        // Parse the command ID from the JSON output
+                        def commandJson = readJSON text: commandOutput
+                        def commandId = commandJson.Command.CommandId
+                        echo "SSM Command ID: ${commandId}"
+
+                        // Step 3: Wait for the command to complete (timeout after 300 seconds)
+                        sh """
+                            set -e
+                            aws ssm wait command-executed \
+                                --command-id ${commandId} \
+                                --instance-id ${INSTANCE_ID} \
+                                --region ${AWS_REGION}
                         """
+
+                        // Step 4: Get the command invocation details to check the status
+                        def invocationOutput = sh(script: """
+                            aws ssm get-command-invocation \
+                                --command-id ${commandId} \
+                                --instance-id ${INSTANCE_ID} \
+                                --region ${AWS_REGION} \
+                                --output json
+                        """, returnStdout: true).trim()
+
+                        // Parse the invocation details
+                        def invocationJson = readJSON text: invocationOutput
+                        def status = invocationJson.Status
+                        echo "SSM Command Status: ${status}"
+
+                        // Step 5: Check the status and fail if the command failed
+                        if (status != 'Success') {
+                            echo "SSM Command Output (Standard Output): ${invocationJson.StandardOutputContent}"
+                            echo "SSM Command Output (Standard Error): ${invocationJson.StandardErrorContent}"
+                            error "SSM Command failed with status: ${status}"
+                        } else {
+                            echo "SSM Command succeeded!"
+                            echo "SSM Command Output (Standard Output): ${invocationJson.StandardOutputContent}"
+                            echo "SSM Command Output (Standard Error): ${invocationJson.StandardErrorContent}"
+                        }
                     }
                 }
             }
         }
     }
-}    
+}
