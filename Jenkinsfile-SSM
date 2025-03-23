@@ -35,8 +35,12 @@ pipeline {
                                 --output json
                         """, returnStdout: true).trim()
 
-                        // Parse the command ID from the JSON output
+                        // Pretty-print the JSON output and write to a file
                         def commandJson = readJSON text: commandOutput
+                        def prettyCommandOutput = groovy.json.JsonOutput.prettyPrint(commandOutput)
+                        writeFile file: 'ssm-send-command-output.json', text: prettyCommandOutput
+
+                        // Extract the command ID
                         def commandId = commandJson.Command.CommandId
                         echo "SSM Command ID: ${commandId}"
 
@@ -58,8 +62,12 @@ pipeline {
                                 --output json
                         """, returnStdout: true).trim()
 
-                        // Parse the invocation details
+                        // Pretty-print the invocation JSON output and write to a file
                         def invocationJson = readJSON text: invocationOutput
+                        def prettyInvocationOutput = groovy.json.JsonOutput.prettyPrint(invocationOutput)
+                        writeFile file: 'ssm-command-invocation-output.json', text: prettyInvocationOutput
+
+                        // Parse the invocation details
                         def status = invocationJson.Status
                         echo "SSM Command Status: ${status}"
 
@@ -73,9 +81,12 @@ pipeline {
                             echo "SSM Command Output (Standard Output): ${invocationJson.StandardOutputContent}"
                             echo "SSM Command Output (Standard Error): ${invocationJson.StandardErrorContent}"
                         }
+
+                        // Step 6: Archive the JSON files as artifacts
+                        archiveArtifacts artifacts: 'ssm-send-command-output.json,ssm-command-invocation-output.json', fingerprint: true
                     }
                 }
             }
         }
     }
-}
+} 
