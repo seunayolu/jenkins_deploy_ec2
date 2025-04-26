@@ -1,0 +1,102 @@
+def runPipeline(pipeline) {
+    pipeline.with {
+        environment {
+            EC2_IP = "${params.EC2_IP}"
+            REMOTE_PATH = "/home/${params.REMOTE_USER}"
+            SCRIPT_NAME = "websetup.sh"
+        }
+
+        stages {
+            stage('Validate Parameters') {
+                steps {
+                    script {
+                        if (!params.EC2_IP?.trim()) {
+                            error "EC2_IP parameter is required"
+                        }
+                        if (!params.GIT_URL?.trim()) {
+                            error "GIT_URL parameter is required"
+                        }
+                        if (!params.GIT_BRANCH?.trim()) {
+                            error "GIT_BRANCH parameter is required"
+                        }
+                        if (!params.SSH_CREDENTIALS?.trim()) {
+                            error "SSH_CREDENTIALS parameter is required"
+                        }
+                        echo "Parameters validated successfully"
+                    }
+                }
+            }
+
+            stage('Fetch Code') {
+                steps {
+                    script {
+                        try {
+                            echo "Pulling source code from ${params.GIT_URL} (branch: ${params.GIT_BRANCH})"
+                            git branch: params.GIT_BRANCH, url: params.GIT_URL
+                        } catch (Exception e) {
+                            error "Failed to fetch code from Git: ${e.getMessage()}"
+                        }
+                    }
+                }
+            }
+
+            stage('Validate Script') {
+                steps {
+                    script {
+                        if (!fileExists(env.SCRIPT_NAME)) {
+                            error "Deployment script ${env.SCRIPT_NAME} not found"
+                        }
+                        echo "Deployment script validated"
+                    }
+                }
+            }
+
+            stage('Deploy to EC2') {
+                steps {
+                    script {
+                        try {
+                            echo "Deploying ${env.SCRIPT_NAME} to EC2 (${params.EC2_IP})"
+                            def shellCmd = "bash ${env.REMOTE_PATH}/${env.SCRIPT_NAME}"
+                            
+                            sshagent (credentials: [params.SSH_CREDENTIALS]) {
+                                // Test SSH connection
+                                sh "ssh -o StrictHostKeyChecking=no ${params.REMOTE_USER}@${params.EC2_IP} 'echo SSH connection successful' || exit 1"
+                                
+                                // Copy script
+                                sh """
+                                    scp -o StrictHostKeyChecking=no \
+                                    ${env.SCRIPT_NAME} \
+                                    ${params.REMOTE_USER}@${params.EC2_IP}:${env.REMOTE_PATH}
+                                """
+                                
+                                // Execute script
+                                sh """
+                                    ssh -o StrictHostKeyChecking=no \
+                                    ${params.REMOTE_USER}@${params.EC2_IP} \
+                                    "${shellCmd}"
+                                """
+                            }
+                        } catch (Exception e) {
+                            error "Deployment failed: ${e.getMessage()}"
+                        }
+                    }
+                }
+            }
+        }
+
+        post {
+            success {
+                echo "Pipeline completed successfully"
+            }
+            failure {
+                echo "Pipeline failed. Check logs for details."
+            }
+            always {
+                echo "Cleaning up workspace"
+                cleanWs()
+            }
+        }
+    }
+}
+
+return this
