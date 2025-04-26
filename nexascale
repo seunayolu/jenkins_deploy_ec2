@@ -16,5 +16,17 @@ pipeline {
                 }
             }
         }
+
+        stage('deploy to ec2') {
+            steps {
+                script {
+                    echo "Deploying to EC2"
+                    def shellScript = "bash ./websetup.sh"
+                    sshagent(['jenkins-key']) {
+                        sh " scp -o StrictHostKeyChecking=no websetup.sh ubuntu@${Instance_IP}:/home/ubuntu/"
+                    }
+                }
+            }
+        }
     }
 }
