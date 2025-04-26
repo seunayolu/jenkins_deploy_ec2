@@ -1,0 +1,20 @@
+pipeline {
+    agent {
+        label 'nexascale-node-01'
+    }
+
+    environment {
+        Instance_IP = '3.9.189.251'
+    }
+
+    stages {
+        stage ('fetch code') {
+            steps {
+                script {
+                    echo "Pulling source code from Git"
+                    git branch: 'jenkins', url: 'https://github.com/seunayolu/jenkins_deploy_ec2.git'
+                }
+            }
+        }
+    }
+}
