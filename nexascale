@@ -24,6 +24,7 @@ pipeline {
                     def shellScript = "bash ./websetup.sh"
                     sshagent(['jenkins-key']) {
                         sh " scp -o StrictHostKeyChecking=no websetup.sh ubuntu@${Instance_IP}:/home/ubuntu/"
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@${Instance_IP} ${shellScript}"
                     }
                 }
             }
